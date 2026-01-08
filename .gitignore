@@ -1,0 +1,188 @@
+############################
+# 一、实验运行与训练产物（必须忽略）
+############################
+
+# 训练/推理日志（stdout, debug, nohup 输出等）
+logs/
+nohup.out
+maze_lar.txt
+*.log
+
+# Weights & Biases 本地运行目录（包含大量中间文件）
+wandb/
+
+# 实验结果、评估输出（可复现，不应进 Git）
+results/
+runs/
+checkpoints/
+checkpoints*/
+outputs/
+
+# Ray 运行与鉴权文件（机器相关 + 私密）
+ray/
+ray_results/
+ray/auth.json
+
+# 数据集与大文件（GitHub 不允许 >100MB）
+*.hdf5
+*.h5
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.tar
+*.tar.gz
+*.zip
+
+# 本地或机器相关配置
+fuse.cfg
+*.ai
+
+
+############################
+# 二、Python 运行缓存与编译产物
+############################
+
+# Python 字节码缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C/C++ 扩展编译产物
+*.so
+
+
+############################
+# 三、Python 打包 / 分发相关（开发时产生）
+############################
+
+# setuptools / pip / wheel 产物
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+
+############################
+# 四、测试 / 覆盖率 / 临时缓存
+############################
+
+# 测试与覆盖率
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+.hypothesis/
+
+
+############################
+# 五、交互式工具 / IDE / Notebook
+############################
+
+# Jupyter Notebook 缓存
+.ipynb_checkpoints/
+
+# IPython 配置
+profile_default/
+ipython_config.py
+
+# IDE / 编辑器配置
+.spyderproject
+.spyproject
+.ropeproject
+
+# mypy / Pyre 类型检查缓存
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+
+############################
+# 六、文档与构建工具
+############################
+
+# Sphinx 文档构建输出
+docs/_build/
+
+# mkdocs 站点
+/site
+
+# PyInstaller
+*.manifest
+*.spec
+
+
+############################
+# 七、Web / 框架相关（模板保留，通常无影响）
+############################
+
+# Django
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+
+############################
+# 八、虚拟环境（必须忽略）
+############################
+
+# Conda / venv / pipenv / poetry 等虚拟环境
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PEP 582（如 pyflow）
+__pypackages__/
+
+
+############################
+# 九、系统 / 杂项
+############################
+
+# macOS / Linux 杂项
+.DS_Store
+Thumbs.db
+
+# pip 安装日志
+pip-log.txt
+pip-delete-this-directory.txt
