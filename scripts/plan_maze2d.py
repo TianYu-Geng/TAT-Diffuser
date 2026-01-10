@@ -4,10 +4,10 @@ from os.path import join
 import pdb
 import os
 
-from diffuser.guides.policies import TATPolicy
+from diffuser.guides.policies import TATPolicy # 采用TATPolicy
 import diffuser.datasets as datasets
 import diffuser.utils as utils
-from diffuser.tree.tree import TrajAggTree
+from diffuser.tree.tree import TrajAggTree # 轨迹聚合树的数据结构
 
 
 class Parser(utils.Parser):
@@ -34,7 +34,7 @@ renderer = diffusion_experiment.renderer
 observation_dim = dataset.observation_dim
 action_dim = dataset.action_dim
 
-
+# 重点内容！！！
 policy = TATPolicy(diffusion, dataset.normalizer, use_tree = args.use_tree)
 
 
@@ -45,6 +45,7 @@ for _ in range(num_eval):
     env = datasets.load_environment(args.dataset)
     env.seed(seed)
 
+    ## 重点内容-构建TrajAggTree,交给policy，让后续的 policy(cond, ...) 在这棵树上做聚合（TAT 的核心结构）
     if args.use_tree:
         traj_agg_tree = TrajAggTree(tree_lambda=args.tree_lambda, 
                                      traj_dim=observation_dim,
@@ -61,11 +62,13 @@ for _ in range(num_eval):
 
     observation = env.reset()
 
+    ## multi_task=True 只是让“每次 episode 的目标不同”，并不是“一次多个目标”；
+    ## 真正的多目标任务需要类似 TDP 的分段式扩散结构，这部分当前代码没有实现。
     if args.multi_task:
         print('Resetting target')
         env.set_target()
 
-    ## set conditioning xy position to be the goal
+    ## 构造 Diffuser 的条件 cond（起点 + 终点）
     target = env._target
     cond = {
         diffusion.horizon - 1: np.array([*target, 0, 0]),
@@ -79,8 +82,9 @@ for _ in range(num_eval):
 
         state = env.state_vector().copy()
 
-        ## can replan if desired, but the open-loop plans are good enough for maze2d
-        ## that we really only need to plan once
+        '''
+            t=0：起点 = 当前状态 ; t=H-1：终点 ≈ 目标
+        '''
         if t == 0:
             cond[0] = observation
             cond_draw = cond.copy()
@@ -88,7 +92,8 @@ for _ in range(num_eval):
             _, samples = policy(cond, batch_size=args.batch_size)
             tree_observations_render = samples.observations[0].copy()
             # actions = samples.actions[0]
-            sequence = samples.observations[0]
+            ## 采样多个，但几乎没人做严格的轨迹筛选 → 导致性能不稳定。
+            sequence = samples.observations[0] # 只取其中一条轨迹（第 0 条）作为“计划路径”，后续按这个路径逐步执行（open-loop）。
         # pdb.set_trace()
 
         # ####
@@ -99,7 +104,7 @@ for _ in range(num_eval):
             next_waypoint[2:] = 0
             # pdb.set_trace()
 
-        ## can use actions or define a simple controller based on state predictions
+        ##  用于画 TAT 的树图（或者拓展出的最优路径），下面是一个简单的追踪控制
         action = next_waypoint[:2] - state[:2] + (next_waypoint[2:] - state[2:])
         # pdb.set_trace()
         ####
@@ -113,8 +118,7 @@ for _ in range(num_eval):
         #         action = -state[2:]
         #         pdb.set_trace()
 
-
-
+        ## 执行一步环境，累计 reward，按 D4RL 定义算 normalized score，并打印当前 step 的信息。
         next_observation, reward, terminal, _ = env.step(action)
         total_reward += reward
         score = env.get_normalized_score(total_reward)
@@ -139,7 +143,7 @@ for _ in range(num_eval):
             fullpath = join(savepath_i, f'{t}.png')
 
             if t == 0: 
-                # print first 10 plans sampled from vanilla diffuser
+                # 画前 10 条计划轨迹（vanilla 扩散）
                 for k in range(min(10, len(samples.observations_render))):
                     renderer.composite(join(savepath_i, f'diffuser_plan{k}.png'), samples.observations_render[k][None], start=cond_draw[0], end=cond_draw[diffusion.horizon - 1], ncol=1)
                     # renderer.composite(fullpath, samples.observations_render[:4], ncol=1)
@@ -149,13 +153,14 @@ for _ in range(num_eval):
 
             # renderer.render_plan(join(savepath_i, f'{t}_plan.mp4'), samples.actions, samples.observations, state)
             ## save rollout thus far
+            ## 如果用了树，再画一张 tree_plan
             renderer.composite(join(savepath_i, 'rollout.png'), np.array(rollout)[None], start=cond_draw[0], end=cond_draw[diffusion.horizon - 1], ncol=1)
 
             # renderer.render_rollout(join(savepath_i, f'rollout.mp4'), rollout, fps=80)
 
             # logger.video(rollout=join(savepath_i, f'rollout.mp4'), plan=join(savepath_i, f'{t}_plan.mp4'), step=t)
 
-        if terminal:
+        if terminal: # 如果 terminal=True，说明到达终止条件（成功或失败），就 break：
             break
 
         observation = next_observation
